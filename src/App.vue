@@ -106,8 +106,19 @@ const login = () => {
   window.location.href = `${BACKEND_URL}/auth/login`;
 };
 
-const logout = () => {
-  window.location.href = `${BACKEND_URL}/auth/logout`;
+const logout = async () => {
+  try {
+    // 1. ยิง POST ไปบอก Backend ให้ลบ Cookie
+    const res = await api.post('/auth/logout');
+    if (res.data.logoutUrl) {
+      window.location.href = res.data.logoutUrl;
+    } else {
+      window.location.reload(); 
+    }
+  } catch (error) {
+    console.error('Logout failed', error);
+    window.location.href = '/';
+  }
 };
 
 const getProfile = async () => {
@@ -163,7 +174,7 @@ api.interceptors.response.use((response) => response, async (error) =>{
 
     try {
       // 1. เรียก Endpoint /auth/refresh
-      await api.get('/auth/refresh');
+      await api.post('/auth/refresh');
       // 2. ถ้าผ่าน แสดงว่า Cookie ใหม่ถูกฝังแล้ว ให้แจ้งคิวที่รออยู่
       processQueue(null, true);
       // 3. ยิง Request เดิมซ้ำอีกรอบ
@@ -179,7 +190,18 @@ api.interceptors.response.use((response) => response, async (error) =>{
   return Promise.reject(error);
 });
 
-onMounted(() => {
-  getProfile();
+const fetchCsrfToken = async() => {
+  try {
+    const res = await api.get('/auth/csrf');
+    api.defaults.headers.common['x-csrf-token'] = res.data.csrfToken;
+    console.log('CSRF Token set:', res.data.csrfToken);
+  } catch (error) {
+    console.error('CSRF Init Failed', error);
+  }
+};
+
+onMounted(async() => {
+  await fetchCsrfToken();
+  await getProfile();
 });
 </script>
