@@ -158,7 +158,7 @@ const processQueue = (error: any, token: any = null) => {
 api.interceptors.response.use((response) => response, async (error) =>{
   const orignalRequest = error.config;
   // ถ้า Error คือ 401 และยังไม่ได้ลอง Refresh
-  if (error.response.status === 401 && !orignalRequest._retry) {
+  if (error.response.status === 401 && !orignalRequest._retry && !orignalRequest.url.includes('/auth/refresh')) {
     if (isRefreshing) {
       // ถ้ากำลัง Refresh อยู่ ให้ Request นี้รอไปก่อน
       return new Promise(function(resolve, reject){
