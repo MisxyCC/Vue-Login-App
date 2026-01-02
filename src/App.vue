@@ -87,6 +87,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
+import type { QueueItem, User } from './models/types';
 
 // --- Configuration ---
 const BACKEND_URL = 'http://localhost:3005'; // แก้ให้ตรงกับ Backend ของคุณ
@@ -97,7 +98,7 @@ const api = axios.create({
 });
 
 // --- State ---
-const user = ref<any>(null);
+const user = ref<User | null>(null);
 const loading = ref(false);
 const error = ref('');
 
@@ -141,9 +142,9 @@ const getProfile = async () => {
 };
 
 let isRefreshing: boolean = false;
-let failedQueue: any[] = [];
+let failedQueue: QueueItem[] = [];
 
-const processQueue = (error: any, token: any = null) => {
+const processQueue = (error: Error | null, token: any = null) => {
   failedQueue.forEach(prom => {
     if (error) {
       prom.reject(error);
@@ -181,7 +182,7 @@ api.interceptors.response.use((response) => response, async (error) =>{
       return api(orignalRequest);
     } catch (refreshError) {
       // 4. ถ้า Refresh ไม่ผ่าน (หมดอายุจริง) หรือยังไม่เคย Login)
-      processQueue(refreshError, null);
+      processQueue(refreshError as Error, null);
       return Promise.reject(refreshError);    
     } finally {
       isRefreshing = false;
